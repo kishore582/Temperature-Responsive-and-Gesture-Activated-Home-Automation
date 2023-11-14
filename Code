@@ -1,0 +1,76 @@
+#define sensorPin 8
+#include <Servo.h>
+#include "DHT.h"
+
+#define DHTPIN 2     // Digital pin connected to DHT11
+#define DHTTYPE DHT11   // DHT 11
+
+DHT dht(DHTPIN, DHTTYPE);
+
+// Variable to store the time when last event happened
+unsigned long lastEvent = 0;
+bool ledsOn = false;
+
+Servo servo;
+
+void setup() 
+{
+  pinMode(sensorPin, INPUT); // Set sensor pin as an INPUT
+  pinMode(4, OUTPUT);       // LED 1 output pin
+  pinMode(5, OUTPUT);       // LED 2 output pin
+  servo.attach(9); // Servo motor control pin
+  servo.write(90); // Set servo to the initial position
+  Serial.begin(9600);
+}
+
+void loop() 
+{
+  // Read Sound sensor
+  int sensorData = digitalRead(sensorPin);
+  float temp = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  // If pin goes LOW, sound is detected
+  if (sensorData == LOW) 
+  {
+
+    // If 25ms have passed since the last LOW state, it means that
+    // the clap is detected and not due to any spurious sounds
+    if (millis() - lastEvent > 25) 
+    {
+      if (ledsOn) 
+      {
+        digitalWrite(4, LOW); // Turn off LED 1
+        digitalWrite(5, LOW); // Turn off LED 2
+        servo.write(360);
+        Serial.println("Fans Switched OFF");
+        Serial.println("Lights Switched OFF");
+        Serial.print("Temperature: ");
+        Serial.print(temp);
+        Serial.print(F("°C "));
+        Serial.println();
+        Serial.print("Humidity: ");
+        Serial.print(humidity);
+        Serial.println();
+        ledsOn = false;
+      } 
+      else 
+      {
+        digitalWrite(4, HIGH); // Turn on LED 1
+        digitalWrite(5, HIGH); // Turn on LED 2
+        servo.write(0);
+        Serial.println("Fans Switched ON");
+        Serial.println("Lights Switched ON");
+        Serial.print("Temperature: ");
+        Serial.print(temp);
+        Serial.print(F("°C "));
+        Serial.println();
+        Serial.print("Humidity: ");
+        Serial.print(humidity);
+        Serial.println();
+        ledsOn = true;
+      }
+      // Remember when the last event happened
+      lastEvent = millis();
+    }
+  }
+}
